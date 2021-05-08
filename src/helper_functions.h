@@ -1,10 +1,8 @@
-/**
- * helper_functions.h
- * Some helper functions for the 2D particle filter.
- *
- * Created on: Dec 13, 2016
- * Author: Tiffany Huang
- */
+///@file helper_functions.h
+///@brief Some helper functions for the 2D particle filter.
+///@date 5-8-2021
+///@author s.aparajith@live.com
+///@copyright : none reserved. No liabilities. MIT License
 
 #ifndef HELPER_FUNCTIONS_H_
 #define HELPER_FUNCTIONS_H_
@@ -21,26 +19,20 @@
 const double M_PI = 3.14159265358979323846;
 #endif
 
-/**
- * Struct representing one position/control measurement.
- */
+///@struct representing one position/control measurement.
 struct control_s {
   double velocity;  // Velocity [m/s]
   double yawrate;   // Yaw rate [rad/s]
 };
 
-/**
- * Struct representing one ground truth position.
- */
+/// @struct representing one ground truth position.
 struct ground_truth {
   double x;     // Global vehicle x position [m]
   double y;     // Global vehicle y position
   double theta; // Global vehicle yaw [rad]
 };
 
-/**
- * Struct representing one landmark observation measurement.
- */
+///@struct representing one landmark observation measurement.
 struct LandmarkObs {
   
   int id;     // Id of matching landmark in the map.
@@ -48,22 +40,12 @@ struct LandmarkObs {
   double y;   // Local (vehicle coords) y position of landmark observation [m]
 };
 
-/**
- * Computes the Euclidean distance between two 2D points.
- * @param (x1,y1) x and y coordinates of first point
- * @param (x2,y2) x and y coordinates of second point
- * @output Euclidean distance between two 2D points
- */
-inline double dist(double x1, double y1, double x2, double y2) {
-  return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-}
-
-/**
- * Computes the error between ground truth and particle filter data.
- * @param (gt_x, gt_y, gt_theta) x, y and theta of ground truth
- * @param (pf_x, pf_y, pf_theta) x, y and theta of particle filter
- * @output Error between ground truth and particle filter data.
- */
+///
+///@brief Computes the error between ground truth and particle filter data.
+///@param (gt_x, gt_y, gt_theta) x, y and theta of ground truth
+///@param (pf_x, pf_y, pf_theta) x, y and theta of particle filter
+///@return Error between ground truth and particle filter data.
+///
 inline double * getError(double gt_x, double gt_y, double gt_theta, double pf_x,
                          double pf_y, double pf_theta) {
   static double error[3];
@@ -77,12 +59,11 @@ inline double * getError(double gt_x, double gt_y, double gt_theta, double pf_x,
   return error;
 }
 
-/**
- * Reads map data from a file.
- * @param filename Name of file containing map data.
- * @output True if opening and reading file was successful
- */
-inline bool read_map_data(std::string filename, Map& map) {
+///@brief Reads map data from a file.
+///@param[in] filename Name of file containing map data.
+///@param[out] map filled map list of locations.
+///@return True if opening and reading file was successful
+inline bool read_map_data(const std::string & filename, maps::Map& map) {
   // Get file of map
   std::ifstream in_file_map(filename.c_str(),std::ifstream::in);
   // Return if we can't open the file
@@ -121,12 +102,11 @@ inline bool read_map_data(std::string filename, Map& map) {
   return true;
 }
 
-/**
- * Reads control data from a file.
- * @param filename Name of file containing control measurements.
- * @output True if opening and reading file was successful
- */
-inline bool read_control_data(std::string filename, 
+///@brief Reads control data from a file.
+///@param[in] filename Name of file containing control measurements.
+///@param[out] position_meas fill position measurements
+///@return True if opening and reading file was successful
+inline bool read_control_data(const std::string & filename, 
                               std::vector<control_s>& position_meas) {
   // Get file of position measurements
   std::ifstream in_file_pos(filename.c_str(),std::ifstream::in);
@@ -163,11 +143,10 @@ inline bool read_control_data(std::string filename,
   return true;
 }
 
-/**
- * Reads ground truth data from a file.
- * @param filename Name of file containing ground truth.
- * @output True if opening and reading file was successful
- */
+///@brief Reads ground truth data from a file.
+///@param[in] filename Name of file containing ground truth.
+///@param[out] gt collected ground truths from the file
+///@return True if opening and reading file was successful
 inline bool read_gt_data(std::string filename, std::vector<ground_truth>& gt) {
   // Get file of position measurements
   std::ifstream in_file_pos(filename.c_str(),std::ifstream::in);
@@ -206,11 +185,10 @@ inline bool read_gt_data(std::string filename, std::vector<ground_truth>& gt) {
   return true;
 }
 
-/**
- * Reads landmark observation data from a file.
- * @param filename Name of file containing landmark observation measurements.
- * @output True if opening and reading file was successful
- */
+///@brief Reads landmark observation data from a file.
+///@param[in] filename Name of file containing landmark observation measurements.
+///@param[out] observations list of read landmark observation measurements.
+///@return True if opening and reading file was successful
 inline bool read_landmark_data(std::string filename, 
                                std::vector<LandmarkObs>& observations) {
   // Get file of landmark measurements
