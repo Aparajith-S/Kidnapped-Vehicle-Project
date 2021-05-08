@@ -1,9 +1,8 @@
-/**
- * map.h
- *
- * Created on: Dec 12, 2016
- * Author: mufferm
- */
+/// @file map.h
+/// @brief map definitions
+/// @date 5-8-2021
+/// @author: s.aparajith@live.com
+///@copyright : none reserved. No liabilities. MIT License
 
 #ifndef MAP_H_
 #define MAP_H_

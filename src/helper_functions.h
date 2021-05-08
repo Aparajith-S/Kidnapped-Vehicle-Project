@@ -32,6 +32,13 @@ struct ground_truth {
   double theta; // Global vehicle yaw [rad]
 };
 
+/// @struct representing state of the vehicle.
+struct state
+{
+    geo_tools::point2d<double> pos;
+    double theta;
+};
+
 ///@struct representing one landmark observation measurement.
 struct LandmarkObs {
   
