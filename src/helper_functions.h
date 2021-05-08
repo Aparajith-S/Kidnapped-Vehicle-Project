@@ -248,4 +248,64 @@ inline bool read_landmark_data(std::string filename,
   return true;
 }
 
+///@brief finds the multivariate gaussian of a point around the mean and given standard deviation 
+///@param[in] point the interested point for which the multivariate gaussian has to be computed
+///@param[in] sigma the stddev
+///@param[in] mu the mean 
+inline double gaussian(const geo_tools::point2d<double> & point, const geo_tools::point2d<double> &  sigma, const geo_tools::point2d<double> &  mu)
+{
+    return (1.0 / (2.0 * M_PI * sigma.x * sigma.y)) *
+        exp(-((point.x - mu.x) * (point.x - mu.x) / (2.0 * sigma.x * sigma.x) +
+            (point.y - mu.y) * (point.y - mu.y) / (2.0 * sigma.y * sigma.y)));
+}
+
+///@brief computes next state using vehicle model equations 
+///@details based on its previous position and theta, and given its current velocity and yaw rate over the segment.
+///@param[in] i_previous the previous state
+///@param[in] i_ctrl the current control action leading to a velocity and cetrain yaw rate
+///@param[in] i_dt the time period in seconds of the running application 
+///@return next state  
+inline state advanceState(const state & i_previous, const control_s & i_ctrl, const double i_dt)
+{
+    state next;
+    next.pos.x = i_previous.pos.x + (i_ctrl.velocity / i_ctrl.yawrate) * (sin(i_previous.theta + i_ctrl.yawrate * i_dt) - sin(i_previous.theta));
+    next.pos.y = i_previous.pos.y + (i_ctrl.velocity / i_ctrl.yawrate) * (-cos(i_previous.theta + i_ctrl.yawrate * i_dt) + cos(i_previous.theta));
+    next.theta = i_previous.theta + i_ctrl.yawrate * i_dt;
+    return next;
+}
+
+///@brief finds the closest map landmark corresponding to the observation 
+///@details if the list is empty then id will be filled with an invalid -1 value
+///@param[in] mapLandmarks list of all map landmarks 
+///@param[in] obs the measured observation 
+///@return closest Landmark
+inline LandmarkObs findClosest(const std::vector<LandmarkObs>& mapLandmarks, const LandmarkObs& obs)
+{
+    float dist = std::numeric_limits<float>::max();
+    LandmarkObs retValue{ -1,
+        geo_tools::point2d<double>{std::numeric_limits<double>::max(),
+        std::numeric_limits<double>::max()} };
+    for (const auto& point : mapLandmarks)
+    {
+        float running_dist = point.pos.cart2d(obs.pos);
+        if (running_dist < dist)
+        {
+            dist = running_dist;
+            retValue = point;
+        }
+    }
+    return retValue;
+}
+
+///@brief rotational and translational transform of the observation wrt the particle
+///@param[in] particle list of all map landmarks 
+///@param[in] observation the measured observation 
+///@param[in] theta the heading angle of the particle.
+///@return transformed Landmark
+inline LandmarkObs transform(const geo_tools::point2d<double>& particle, const LandmarkObs & observation, const double theta)
+{
+    return{observation.id,
+        {observation.pos.x * cos(theta) - sin(theta) * observation.pos.y + particle.x,
+        observation.pos.x * sinf(theta) + cosf(theta) * observation.pos.y + particle.y}};
+}
 #endif  // HELPER_FUNCTIONS_H_
