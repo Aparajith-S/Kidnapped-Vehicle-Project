@@ -8,16 +8,15 @@
 #define MAP_H_
 
 #include <vector>
-
-class Map {
- public:  
+#include "geometry.h"
+namespace maps{
+struct Map { 
   struct single_landmark_s {
     int id_i ; // Landmark ID
-    float x_f; // Landmark x-position in the map (global coordinates)
-    float y_f; // Landmark y-position in the map (global coordinates)
+    geo_tools::point2d<float> pos_f; // Landmark x,y-position in the map (global coordinates)
   };
 
   std::vector<single_landmark_s> landmark_list; // List of landmarks in the map
 };
-
+}
 #endif  // MAP_H_

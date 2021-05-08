@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "map.h"
+#include "geometry.h"
 
 // for portability of M_PI (Vis Studio, MinGW, etc.)
 #ifndef M_PI
@@ -27,8 +28,7 @@ struct control_s {
 
 /// @struct representing one ground truth position.
 struct ground_truth {
-  double x;     // Global vehicle x position [m]
-  double y;     // Global vehicle y position
+  geo_tools::point2d<double> pos;     // Global vehicle x,y position [m , m]
   double theta; // Global vehicle yaw [rad]
 };
 
@@ -43,8 +43,7 @@ struct state
 struct LandmarkObs {
   
   int id;     // Id of matching landmark in the map.
-  double x;   // Local (vehicle coords) x position of landmark observation [m]
-  double y;   // Local (vehicle coords) y position of landmark observation [m]
+  geo_tools::point2d<double> pos;   // Local (vehicle coords) x,y position of landmark observation [m]
 };
 
 ///
@@ -96,12 +95,12 @@ inline bool read_map_data(const std::string & filename, maps::Map& map) {
     iss_map >> id_i;
 
     // Declare single_landmark
-    Map::single_landmark_s single_landmark_temp;
+    maps::Map::single_landmark_s single_landmark_temp;
 
     // Set values
     single_landmark_temp.id_i = id_i;
-    single_landmark_temp.x_f  = landmark_x_f;
-    single_landmark_temp.y_f  = landmark_y_f;
+    single_landmark_temp.pos_f.x  = landmark_x_f;
+    single_landmark_temp.pos_f.y  = landmark_y_f;
 
     // Add to landmark list of map
     map.landmark_list.push_back(single_landmark_temp);
@@ -182,8 +181,8 @@ inline bool read_gt_data(std::string filename, std::vector<ground_truth>& gt) {
     iss_pos >> azimuth;
 
     // Set values
-    single_gt.x = x;
-    single_gt.y = y;
+    single_gt.pos.x = x;
+    single_gt.pos.y = y;
     single_gt.theta = azimuth;
 
     // Add to list of control measurements and ground truth
@@ -224,8 +223,8 @@ inline bool read_landmark_data(std::string filename,
     LandmarkObs meas;
 
     // Set values
-    meas.x = local_x;
-    meas.y = local_y;
+    meas.pos.x = local_x;
+    meas.pos.y = local_y;
 
     // Add to list of control measurements
     observations.push_back(meas);

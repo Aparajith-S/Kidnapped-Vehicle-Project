@@ -9,17 +9,27 @@
 
 #include <string>
 #include <vector>
+#include "geometry.h"
 #include "helper_functions.h"
 
 struct Particle {
   int id;
-  double x;
-  double y;
+  geo_tools::point2d<double> pos;
   double theta;
   double weight;
   std::vector<int> associations;
   std::vector<double> sense_x;
   std::vector<double> sense_y;
+  /// @brief Ctor for initializing  
+  Particle():id(0),
+  pos{0.0,0.0},
+  theta(0.0),
+  weight(0.0),
+  associations(std::vector<int>()),
+  sense_x(std::vector<double>()),
+  sense_y(std::vector<double>())
+  {}
+  virtual ~Particle(){}
 };
 
 
@@ -27,7 +37,9 @@ class ParticleFilter {
  public:
   // Constructor
   // @param num_particles Number of particles
-  ParticleFilter() : num_particles(0), is_initialized(false) {}
+  ParticleFilter() :  m_particles(std::vector<Particle>()),
+  m_num_particles(0), 
+  m_initialized(false) {}
 
   // Destructor
   ~ParticleFilter() {}
