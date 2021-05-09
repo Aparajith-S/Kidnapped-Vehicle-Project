@@ -30,7 +30,7 @@ script:
   - if [ -e /usr/lib/libuWs.so ];then
     sudo rm /usr/lib/libuWs.so;
     fi
-  - ./install-ubuntu.sh
+  - sudo ./install-ubuntu.sh
   - mkdir build
   - cd build
   - cmake .. && make
