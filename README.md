@@ -7,6 +7,10 @@
 
 ## Build status
 
+**Build matrix:** AMD64, ARM64,  OS: Ubuntu 20.04
+  
+[![Build Status](https://travis-ci.org/Aparajith-S/Kidnapped-Vehicle-Project.svg?branch=master)](https://travis-ci.org/Aparajith-S/Kidnapped-Vehicle-Project)
+
 ## Project Introduction
 The robot has been kidnapped and transported to a new location! Luckily it has a map of this location, a (noisy) GPS estimate of its initial location, and lots of (noisy) sensor and control data.
 
