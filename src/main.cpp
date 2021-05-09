@@ -4,7 +4,8 @@
 #include <string>
 #include "json.hpp"
 #include "particle_filter.h"
-
+#include <chrono>
+#define debug (0)
 // for convenience
 using nlohmann::json;
 using std::string;
@@ -28,17 +29,17 @@ string hasData(string s) {
 int main() {
   uWS::Hub h;
 
-  // Set up parameters here
-  double delta_t = 0.1;  // Time elapsed between measurements [sec]
-  double sensor_range = 50;  // Sensor range [m]
+  // Set  up parameters here
+  constexpr double delta_t = 0.1;  // Time elapsed between measurements [sec]
+  constexpr double sensor_range = 50;  // Sensor range [m]
 
   // GPS measurement uncertainty [x [m], y [m], theta [rad]]
-  double sigma_pos [3] = {0.3, 0.3, 0.01};
+  constexpr double sigma_pos [3] = {0.3, 0.3, 0.01};
   // Landmark measurement uncertainty [x [m], y [m]]
-  double sigma_landmark [2] = {0.3, 0.3};
+  constexpr double sigma_landmark [2] = {0.3, 0.3};
 
   // Read map data
-  Map map;
+  maps::Map map;
   if (!read_map_data("../data/map_data.txt", map)) {
     std::cout << "Error: Could not open map file" << std::endl;
     return -1;
@@ -60,10 +61,11 @@ int main() {
         auto j = json::parse(s);
 
         string event = j[0].get<string>();
-        
+         double previous_velocity;
+        double previous_yawrate;
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          if (!pf.initialized()) {
+          if (!pf.isInitialized()) {
             // Sense noisy position data from the simulator
             double sense_x = std::stod(j[1]["sense_x"].get<string>());
             double sense_y = std::stod(j[1]["sense_y"].get<string>());
@@ -73,8 +75,8 @@ int main() {
           } else {
             // Predict the vehicle's next state from previous 
             //   (noiseless control) data.
-            double previous_velocity = std::stod(j[1]["previous_velocity"].get<string>());
-            double previous_yawrate = std::stod(j[1]["previous_yawrate"].get<string>());
+             previous_velocity = std::stod(j[1]["previous_velocity"].get<string>());
+             previous_yawrate = std::stod(j[1]["previous_yawrate"].get<string>());
 
             pf.prediction(delta_t, sigma_pos, previous_velocity, previous_yawrate);
           }
@@ -88,7 +90,6 @@ int main() {
 
           vector<float> x_sense;
           std::istringstream iss_x(sense_observations_x);
-
           std::copy(std::istream_iterator<float>(iss_x),
           std::istream_iterator<float>(),
           std::back_inserter(x_sense));
@@ -106,14 +107,13 @@ int main() {
             obs.y = y_sense[i];
             noisy_observations.push_back(obs);
           }
-
+		  auto start =std::chrono::high_resolution_clock::now();
           // Update the weights and resample
           pf.updateWeights(sensor_range, sigma_landmark, noisy_observations, map);
           pf.resample();
-
           // Calculate and output the average weighted error of the particle 
           //   filter over all time steps so far.
-          vector<Particle> particles = pf.particles;
+          const vector<Particle> & particles = pf.m_particles;
           int num_particles = particles.size();
           double highest_weight = -1.0;
           Particle best_particle;
@@ -123,13 +123,19 @@ int main() {
               highest_weight = particles[i].weight;
               best_particle = particles[i];
             }
-
             weight_sum += particles[i].weight;
           }
-
+          auto stop = std::chrono::high_resolution_clock::now();
+          auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+		  // To get the value of duration use the count()
+		  // member function on the duration object
+#if debug == 1
           std::cout << "highest w " << highest_weight << std::endl;
           std::cout << "average w " << weight_sum/num_particles << std::endl;
-
+          std::cout << "velocity" << previous_velocity << std::endl;
+          std::cout << "yawrate" << previous_yawrate << std::endl;
+          
+#endif
           json msgJson;
           msgJson["best_particle_x"] = best_particle.x;
           msgJson["best_particle_y"] = best_particle.y;

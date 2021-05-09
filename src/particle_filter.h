@@ -14,22 +14,13 @@
 
 struct Particle {
   int id;
-  geo_tools::point2d<double> pos;
+  double x;
+  double y;
   double theta;
   double weight;
   std::vector<int> associations;
   std::vector<double> sense_x;
   std::vector<double> sense_y;
-  /// @brief Ctor for initializing  
-  Particle():id(0),
-  pos{0.0,0.0},
-  theta(0.0),
-  weight(0.0),
-  associations(std::vector<int>()),
-  sense_x(std::vector<double>()),
-  sense_y(std::vector<double>())
-  {}
-  virtual ~Particle(){}
 };
 
 
@@ -37,9 +28,9 @@ class ParticleFilter {
  public:
   // Constructor
   // @param num_particles Number of particles
-  ParticleFilter() :  m_particles(std::vector<Particle>()),
+  ParticleFilter() :
   m_num_particles(0), 
-  m_initialized(false) {}
+  m_initialized(false){}
 
   // Destructor
   ~ParticleFilter() {}
@@ -51,7 +42,7 @@ class ParticleFilter {
   /// @param[in] theta Initial orientation [rad]
   /// @param[in] std[] Array of dimension 3 [standard deviation of x [m], 
   ///   standard deviation of y [m], standard deviation of yaw [rad]]
-  void init(const double x, const double y, const double theta, const double std[]);
+  void init(const double x, const double y, const double theta,const double std[]);
 
   /// @brief prediction Predicts the state for the next time step
   ///        using the process model.
@@ -69,7 +60,8 @@ class ParticleFilter {
   /// @param[in] predicted Vector of predicted landmark observations
   /// @param[out] observations Vector of landmark observations
   void dataAssociation(const std::vector<LandmarkObs> & predicted, 
-                       std::vector<LandmarkObs>& observations);
+                       std::vector<LandmarkObs>& observations,
+                      Particle& particle);
   
   /// 
   /// @brief updateWeights Updates the weights for each particle based on the likelihood
@@ -108,20 +100,17 @@ class ParticleFilter {
   /// @brief Used for obtaining debugging information related to particles.
   std::string getAssociations(Particle best);
   std::string getSenseCoord(Particle best, std::string coord);
-
- private:
+  const std::vector<Particle> & getParticleListReference(void) const;
+std::vector<Particle> m_particles;
+  private:
   // Number of particles to draw
   int m_num_particles; 
   
   // Flag, if filter is initialized
   bool m_initialized;
-  
-  // Vector of weights of all particles
-  std::vector<double> m_weights; 
-
   // Set of current particles
-  std::vector<Particle> m_particles;
-
+  
+  std::vector<double> m_weights;
 };
 
 #endif  // PARTICLE_FILTER_H_

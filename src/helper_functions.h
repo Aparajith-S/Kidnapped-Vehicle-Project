@@ -7,11 +7,12 @@
 #ifndef HELPER_FUNCTIONS_H_
 #define HELPER_FUNCTIONS_H_
 
-#include <math.h>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <limits>
 #include "map.h"
 #include "geometry.h"
 
@@ -28,14 +29,16 @@ struct control_s {
 
 /// @struct representing one ground truth position.
 struct ground_truth {
-  geo_tools::point2d<double> pos;     // Global vehicle x,y position [m , m]
+  double x;
+  double y;// Global vehicle x,y position [m , m]
   double theta; // Global vehicle yaw [rad]
 };
 
 /// @struct representing state of the vehicle.
 struct state
 {
-    geo_tools::point2d<double> pos;
+    double x;
+    double y;
     double theta;
 };
 
@@ -43,7 +46,8 @@ struct state
 struct LandmarkObs {
   
   int id;     // Id of matching landmark in the map.
-  geo_tools::point2d<double> pos;   // Local (vehicle coords) x,y position of landmark observation [m]
+  double x;   // Local (vehicle coords) x,y position of landmark observation [m]
+  double y;
 };
 
 ///
@@ -99,8 +103,8 @@ inline bool read_map_data(const std::string & filename, maps::Map& map) {
 
     // Set values
     single_landmark_temp.id_i = id_i;
-    single_landmark_temp.pos_f.x  = landmark_x_f;
-    single_landmark_temp.pos_f.y  = landmark_y_f;
+    single_landmark_temp.x_f  = landmark_x_f;
+    single_landmark_temp.y_f  = landmark_y_f;
 
     // Add to landmark list of map
     map.landmark_list.push_back(single_landmark_temp);
@@ -181,8 +185,8 @@ inline bool read_gt_data(std::string filename, std::vector<ground_truth>& gt) {
     iss_pos >> azimuth;
 
     // Set values
-    single_gt.pos.x = x;
-    single_gt.pos.y = y;
+    single_gt.x = x;
+    single_gt.y = y;
     single_gt.theta = azimuth;
 
     // Add to list of control measurements and ground truth
@@ -223,8 +227,8 @@ inline bool read_landmark_data(std::string filename,
     LandmarkObs meas;
 
     // Set values
-    meas.pos.x = local_x;
-    meas.pos.y = local_y;
+    meas.x = local_x;
+    meas.y = local_y;
 
     // Add to list of control measurements
     observations.push_back(meas);
@@ -236,11 +240,22 @@ inline bool read_landmark_data(std::string filename,
 ///@param[in] point the interested point for which the multivariate gaussian has to be computed
 ///@param[in] sigma the stddev
 ///@param[in] mu the mean 
-inline double gaussian(const geo_tools::point2d<double> & point, const geo_tools::point2d<double> &  sigma, const geo_tools::point2d<double> &  mu)
+inline double gaussian(const geo_tools::point2d & point, const geo_tools::point2d&  sigma, const geo_tools::point2d&  mu)
 {
-    return (1.0 / (2.0 * M_PI * sigma.x * sigma.y)) *
-        exp(-((point.x - mu.x) * (point.x - mu.x) / (2.0 * sigma.x * sigma.x) +
-            (point.y - mu.y) * (point.y - mu.y) / (2.0 * sigma.y * sigma.y)));
+  // calculate normalization term
+  double gauss_norm;
+  gauss_norm = 1 / (2 * M_PI * sigma.x * sigma.y);
+
+  // calculate exponent
+  double exponent;
+  exponent = (pow(point.x - mu.x, 2) / (2 * pow(sigma.x, 2)))
+               + (pow(point.y - mu.y, 2) / (2 * pow(sigma.y, 2)));
+    
+  // calculate weight using normalization terms and exponent
+  double weight;
+  weight = gauss_norm * exp(-exponent);
+  //cout<<"Weight at multiv "<<weight<<endl;
+  return weight;
 }
 
 ///@brief computes next state using vehicle model equations 
@@ -252,33 +267,21 @@ inline double gaussian(const geo_tools::point2d<double> & point, const geo_tools
 inline state advanceState(const state & i_previous, const control_s & i_ctrl, const double i_dt)
 {
     state next;
-    next.pos.x = i_previous.pos.x + (i_ctrl.velocity / i_ctrl.yawrate) * (sin(i_previous.theta + i_ctrl.yawrate * i_dt) - sin(i_previous.theta));
-    next.pos.y = i_previous.pos.y + (i_ctrl.velocity / i_ctrl.yawrate) * (-cos(i_previous.theta + i_ctrl.yawrate * i_dt) + cos(i_previous.theta));
-    next.theta = i_previous.theta + i_ctrl.yawrate * i_dt;
-    return next;
-}
-
-///@brief finds the closest map landmark corresponding to the observation 
-///@details if the list is empty then id will be filled with an invalid -1 value
-///@param[in] mapLandmarks list of all map landmarks 
-///@param[in] obs the measured observation 
-///@return closest Landmark
-inline LandmarkObs findClosest(const std::vector<LandmarkObs>& mapLandmarks, const LandmarkObs& obs)
-{
-    float dist = std::numeric_limits<float>::max();
-    LandmarkObs retValue{ -1,
-        geo_tools::point2d<double>{std::numeric_limits<double>::max(),
-        std::numeric_limits<double>::max()} };
-    for (const auto& point : mapLandmarks)
+    if(fabs(i_ctrl.yawrate)<std::numeric_limits<double>::epsilon())
     {
-        float running_dist = point.pos.cart2d(obs.pos);
-        if (running_dist < dist)
-        {
-            dist = running_dist;
-            retValue = point;
-        }
+      next.x = i_previous.x+i_ctrl.velocity*i_dt*cos(i_previous.theta);
+      next.y = i_previous.y+i_ctrl.velocity*i_dt*sin(i_previous.theta);
+      next.theta = i_previous.theta;
     }
-    return retValue;
+    else
+    { 
+      double expr1 = i_previous.theta + i_ctrl.yawrate * i_dt;
+      double expr2 =(i_ctrl.velocity / i_ctrl.yawrate);
+      next.x = i_previous.x + expr2 * (sin(expr1) - sin(i_previous.theta));
+      next.y = i_previous.y + expr2 * (-cos(expr1) + cos(i_previous.theta));
+      next.theta = i_previous.theta + i_ctrl.yawrate * i_dt;
+    }
+   return next;
 }
 
 ///@brief rotational and translational transform of the observation wrt the particle
@@ -286,10 +289,10 @@ inline LandmarkObs findClosest(const std::vector<LandmarkObs>& mapLandmarks, con
 ///@param[in] observation the measured observation 
 ///@param[in] theta the heading angle of the particle.
 ///@return transformed Landmark
-inline LandmarkObs transform(const geo_tools::point2d<double>& particle, const LandmarkObs & observation, const double theta)
+inline LandmarkObs transform(const double px,const double py, const LandmarkObs & observation, const double theta)
 {
     return{observation.id,
-        {observation.pos.x * cos(theta) - sin(theta) * observation.pos.y + particle.x,
-        observation.pos.x * sinf(theta) + cosf(theta) * observation.pos.y + particle.y}};
+        observation.x * cos(theta) - sin(theta) * observation.y + px,
+        observation.x * sin(theta) + cos(theta) * observation.y + py};
 }
 #endif  // HELPER_FUNCTIONS_H_
